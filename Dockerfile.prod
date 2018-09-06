@@ -1,0 +1,24 @@
+# Start with a composer image
+FROM composer:latest AS composer
+
+# Copy the composer files
+COPY ./composer.json /app/composer.json
+COPY ./composer.lock /app/composer.lock
+
+# Install deps
+RUN composer install
+
+# Run the PHP App
+FROM php:apache
+
+## Install PHP extensions
+RUN docker-php-source extract \
+    && docker-php-ext-install mysqli \
+    && docker-php-source delete
+
+# Copy the code from the current directory
+COPY . /var/www/html
+
+# Add the vendor folder from the composer container
+COPY --from=composer /app/vendor /var/www/html/vendor
+
